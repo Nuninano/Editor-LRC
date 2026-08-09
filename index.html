@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta name="google-site-verification" content="kY9kScY7Ylx-RqRbYpUiAQNyfvbkqsEQ8K7rkvZjlZ0" />
+<meta name="google-site-verification" content="kY9kScY7Ylx-RqRbYpUiAQNyfvbkqsEQ8K7rkvZjlZ0" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Editor LRC Pro</title>
@@ -11,6 +11,11 @@
 
 <!-- Respaldo para navegadores viejos -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect x='16' y='16' width='480' height='480' rx='108' fill='%23000000' stroke='%23333333' stroke-width='16'/%3E%3Cpath d='M 176 138 H 226 V 324 H 336 V 374 H 176 Z' fill='%23FFFFFF'/%3E%3C/svg%3E">
+
+<!-- Librería para inyectar etiquetas ID3v2 en MP3 -->
+<script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.4.0/dist/browser-id3-writer.min.js"></script>
+<!-- Librería para leer etiquetas e imágenes del MP3 original -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
 
 <style>
 :root {
@@ -89,6 +94,30 @@ header {
   background: var(--bg-header);
   border-bottom: 1px solid var(--border-color);
   color: var(--text-muted);
+  transition: position 0.2s ease, top 0.2s ease;
+}
+
+/* Fijar TODO el bloque superior (Header + Reproductor + Botones) únicamente en vista Móvil (< 900px) */
+@media (max-width: 899px) {
+  body.sticky-header-active header {
+    position: sticky;
+    top: 0;
+    z-index: 110;
+  }
+
+  body.sticky-header-active .sidebar-panel {
+    position: sticky;
+    top: 48px; /* Acopla el panel del reproductor justo debajo del header */
+    z-index: 100;
+  }
+
+  body.sticky-header-active .playerBox {
+    position: static; /* Cede la responsabilidad de fijarse a su contenedor padre */
+  }
+}
+
+.mobile-only-setting {
+  display: flex;
 }
 
 .header-title {
@@ -486,6 +515,10 @@ button:active {
 @media (min-width: 900px) {
   header { padding: 14px 28px; }
   
+  .mobile-only-setting {
+    display: none !important;
+  }
+
   .app-wrapper {
     display: grid;
     grid-template-columns: 340px 1fr;
@@ -823,8 +856,8 @@ input:checked + .slider:before { transform: translateX(18px); background-color: 
     </div>
 
     <div id="lyrics"></div>
-    <button onclick="downloadLRC()" style="width:100%; margin-top:15px; padding:12px; font-weight:bold; font-size:14px; letter-spacing: 0.5px;">
-      DESCARGAR LRC
+    <button onclick="toggleModal('exportModal', true)" style="width:100%; margin-top:15px; padding:12px; font-weight:bold; font-size:14px; letter-spacing: 0.5px;">
+      EXPORTAR / DESCARGAR LRC
     </button>
   </main>
 </div>
@@ -886,6 +919,27 @@ input:checked + .slider:before { transform: translateX(18px); background-color: 
   </div>
 </div>
 
+<!-- Modal Exportar / Copiar LRC -->
+<div id="exportModal" class="modal-overlay" onclick="handleOverlayClick(event, 'exportModal')">
+  <div class="modal-card">
+    <div class="modal-header">
+      <span class="modal-title">Exportar LRC</span>
+      <button class="btn-danger" style="padding: 4px 8px;" onclick="toggleModal('exportModal', false)">✕</button>
+    </div>
+    <div class="menu-options">
+      <button class="menu-option-btn" onclick="downloadLRCFile()">
+        DESCARGAR ARCHIVO .LRC
+      </button>
+      <button class="menu-option-btn" onclick="copyLRCToClipboard()">
+        COPIAR AL PORTAPAPELES
+      </button>
+      <button class="menu-option-btn" onclick="downloadMP3WithLRC()">
+        DESCARGAR MP3 CON LRC EMBEBIDO
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal Configuración -->
 <div id="settingsModal" class="modal-overlay" onclick="handleOverlayClick(event, 'settingsModal')">
   <div class="modal-card">
@@ -904,6 +958,13 @@ input:checked + .slider:before { transform: translateX(18px); background-color: 
       <span>Negro puro</span>
       <label class="switch">
         <input type="checkbox" id="pureBlackToggle" onchange="updateSettingsFromSwitches()">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="setting-row mobile-only-setting">
+      <span>Fijar menú superior</span>
+      <label class="switch">
+        <input type="checkbox" id="stickyHeaderToggle" checked onchange="updateSettingsFromSwitches()">
         <span class="slider"></span>
       </label>
     </div>
@@ -990,6 +1051,7 @@ let metadata = { title: "", artist: "", album: "", offset: "" };
 let lastActiveIndex = -1;
 
 let currentAudioUrl = null;
+let currentAudioFile = null;
 let currentAudioName = "edited";
 let dialogResolve = null;
 
@@ -1090,11 +1152,17 @@ function saveStateToLocalStorage() {
 function loadStateFromLocalStorage() {
   let savedDark = localStorage.getItem("lrc_theme_dark");
   let savedPureBlack = localStorage.getItem("lrc_theme_pure_black");
+  let savedStickyHeader = localStorage.getItem("lrc_sticky_header_mobile");
   let savedAutoScroll = localStorage.getItem("lrc_auto_scroll");
   let savedApplyOffset = localStorage.getItem("lrc_apply_offset");
 
   if (savedDark !== null) document.getElementById("darkModeToggle").checked = (savedDark === "true");
   if (savedPureBlack !== null) document.getElementById("pureBlackToggle").checked = (savedPureBlack === "true");
+  if (savedStickyHeader !== null) {
+    document.getElementById("stickyHeaderToggle").checked = (savedStickyHeader === "true");
+  } else {
+    document.getElementById("stickyHeaderToggle").checked = true; // Activo por defecto en móvil
+  }
   if (savedAutoScroll !== null) document.getElementById("autoScrollToggle").checked = (savedAutoScroll === "true");
   if (savedApplyOffset !== null) document.getElementById("applyOffsetToggle").checked = (savedApplyOffset === "true");
   
@@ -1267,6 +1335,7 @@ async function importPlainText() {
 function updateSettingsFromSwitches(shouldSave = true) {
   let darkToggle = document.getElementById("darkModeToggle");
   let pureBlackToggle = document.getElementById("pureBlackToggle");
+  let stickyHeaderToggle = document.getElementById("stickyHeaderToggle");
   let autoScrollToggle = document.getElementById("autoScrollToggle");
   let applyOffsetToggle = document.getElementById("applyOffsetToggle");
 
@@ -1279,15 +1348,23 @@ function updateSettingsFromSwitches(shouldSave = true) {
     document.body.classList.add("pure-black-mode");
   }
 
+  if (stickyHeaderToggle && stickyHeaderToggle.checked) {
+    document.body.classList.add("sticky-header-active");
+  } else {
+    document.body.classList.remove("sticky-header-active");
+  }
+
   if (shouldSave) {
     localStorage.setItem("lrc_theme_dark", darkToggle.checked);
     localStorage.setItem("lrc_theme_pure_black", pureBlackToggle.checked);
+    if (stickyHeaderToggle) localStorage.setItem("lrc_sticky_header_mobile", stickyHeaderToggle.checked);
     localStorage.setItem("lrc_auto_scroll", autoScrollToggle.checked);
     localStorage.setItem("lrc_apply_offset", applyOffsetToggle.checked);
   }
 }
 
 function processAudioFile(file) {
+  currentAudioFile = file;
   if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
   currentAudioUrl = URL.createObjectURL(file);
   audio.src = currentAudioUrl;
@@ -1634,14 +1711,14 @@ function formatTime(t) {
   return `[${mStr}:${sFixed}]`;
 }
 
-async function downloadLRC() {
+async function generateLRCContent() {
   if (lyrics.length === 0) {
     await showCustomDialog({
       title: "Exportación vacía",
       message: "No hay ninguna línea de letra cargada para exportar.",
       isAlert: true
     });
-    return;
+    return null;
   }
 
   lyrics.sort((a, b) => a.time - b.time);
@@ -1667,7 +1744,14 @@ async function downloadLRC() {
     out += formatTime(exportTime) + l.text + "\n";
   });
 
-  let blob = new Blob([out], { type: "text/plain;charset=utf-8" });
+  return out;
+}
+
+async function downloadLRCFile() {
+  let content = await generateLRCContent();
+  if (!content) return;
+
+  let blob = new Blob([content], { type: "text/plain;charset=utf-8" });
   let a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   
@@ -1677,7 +1761,103 @@ async function downloadLRC() {
 
   a.download = `${exportName}.lrc`;
   a.click();
+  toggleModal("exportModal", false);
   showToast("LRC descargado");
+}
+
+async function copyLRCToClipboard() {
+  let content = await generateLRCContent();
+  if (!content) return;
+
+  try {
+    await navigator.clipboard.writeText(content);
+    toggleModal("exportModal", false);
+    showToast("Copiado al portapapeles");
+  } catch (err) {
+    showToast("Error al copiar");
+  }
+}
+
+function readMP3Tags(file) {
+  return new Promise((resolve) => {
+    if (!window.jsmediatags) return resolve(null);
+    window.jsmediatags.read(file, {
+      onSuccess: (tag) => resolve(tag.tags),
+      onError: () => resolve(null)
+    });
+  });
+}
+
+async function downloadMP3WithLRC() {
+  if (!currentAudioFile) {
+    toggleModal("exportModal", false);
+    await showCustomDialog({
+      title: "Sin audio cargado",
+      message: "Debes seleccionar o arrastrar un archivo MP3 antes de poder exportarlo con la letra incrustada.",
+      isAlert: true
+    });
+    return;
+  }
+
+  let lrcContent = await generateLRCContent();
+  if (!lrcContent) return;
+
+  try {
+    showToast("Leyendo metadatos e imagen...");
+
+    // 1. Extraer tags y carátula existentes del MP3 original
+    let existingTags = await readMP3Tags(currentAudioFile);
+    let arrayBuffer = await currentAudioFile.arrayBuffer();
+    let writer = new ID3Writer(arrayBuffer);
+
+    // 2. Definir metadatos (prioriza los campos del formulario; si no hay, usa los originales del archivo)
+    let finalTitle = metadata.title || (existingTags?.title || "");
+    let finalArtist = metadata.artist || (existingTags?.artist || "");
+    let finalAlbum = metadata.album || (existingTags?.album || "");
+
+    if (finalTitle) writer.setFrame('TIT2', finalTitle);
+    if (finalArtist) writer.setFrame('TPE1', [finalArtist]);
+    if (finalAlbum) writer.setFrame('TALB', finalAlbum);
+
+    // 3. Reinyectar la carátula original (APIC) si existe
+    if (existingTags && existingTags.picture) {
+      let pic = existingTags.picture;
+      let byteArray = new Uint8Array(pic.data);
+      writer.setFrame('APIC', {
+        type: 3,
+        data: byteArray.buffer,
+        description: 'Cover',
+        mime: pic.format
+      });
+    }
+
+    // 4. Inyectar letra sincronizada (USLT)
+    writer.setFrame('USLT', {
+      description: 'Lyrics',
+      lyrics: lrcContent,
+      language: 'eng'
+    });
+
+    writer.addTag();
+
+    // 5. Generar enlace y descargar
+    let blob = writer.getBlob();
+    let a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+
+    let exportName = finalTitle && finalArtist 
+      ? `${finalArtist} - ${finalTitle}` 
+      : currentAudioName;
+
+    a.download = `${exportName}_synced.mp3`;
+    a.click();
+
+    toggleModal("exportModal", false);
+    showToast("MP3 exportado conservando carátula");
+  } catch (err) {
+    console.error(err);
+    showToast("Error al procesar el MP3");
+  }
 }
 </script>
 
