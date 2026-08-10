@@ -3,8 +3,7 @@
 <head>
 <meta name="google-site-verification" content="kY9kScY7Ylx-RqRbYpUiAQNyfvbkqsEQ8K7rkvZjlZ0" />
 <meta charset="UTF-8">
-<meta name="viewport"
- content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Editor LRC Pro</title>
 
 <!-- Manifest y PWA -->
@@ -15,11 +14,8 @@
 <meta name="apple-mobile-web-app-title" content="LRC Pro">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect x='16' y='16' width='480' height='480' rx='108' fill='%23000000' stroke='%23333333' stroke-width='16'/%3E%3Cpath d='M 176 138 H 226 V 324 H 336 V 374 H 176 Z' fill='%23FFFFFF'/%3E%3C/svg%3E">
 
-<!-- Favicon SVG (moderno) -->
+<!-- Favicon SVG -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect x='16' y='16' width='480' height='480' rx='108' fill='%23000000' stroke='%23333333' stroke-width='16'/%3E%3Cpath d='M 176 138 H 226 V 324 H 336 V 374 H 176 Z' fill='%23FFFFFF'/%3E%3C/svg%3E" type="image/svg+xml">
-
-<!-- Respaldo para navegadores viejos -->
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect x='16' y='16' width='480' height='480' rx='108' fill='%23000000' stroke='%23333333' stroke-width='16'/%3E%3Cpath d='M 176 138 H 226 V 324 H 336 V 374 H 176 Z' fill='%23FFFFFF'/%3E%3C/svg%3E">
 
 <!-- Librería para inyectar etiquetas ID3v2 en MP3 -->
 <script src="https://cdn.jsdelivr.net/npm/browser-id3-writer@4.4.0/dist/browser-id3-writer.min.js"></script>
@@ -106,7 +102,6 @@ header {
   transition: position 0.2s ease, top 0.2s ease;
 }
 
-/* Fijar TODO el bloque superior (Header + Reproductor + Botones) únicamente en vista Móvil (< 900px) */
 @media (max-width: 899px) {
   body.sticky-header-active header {
     position: sticky;
@@ -116,12 +111,12 @@ header {
 
   body.sticky-header-active .sidebar-panel {
     position: sticky;
-    top: 48px; /* Acopla el panel del reproductor justo debajo del header */
+    top: 48px;
     z-index: 100;
   }
 
   body.sticky-header-active .playerBox {
-    position: static; /* Cede la responsabilidad de fijarse a su contenedor padre */
+    position: static;
   }
 }
 
@@ -253,7 +248,6 @@ audio {
   color: var(--text-muted);
 }
 
-/* Selector Personalizado No Nativo */
 .custom-select {
   position: relative;
   display: inline-block;
@@ -406,7 +400,6 @@ button:active {
   transform: scale(1.01);
 }
 
-/* Animación de entrada para tarjetas */
 @keyframes slideUpFade {
   from {
     opacity: 0;
@@ -520,7 +513,6 @@ button:active {
   outline: none;
 }
 
-/* UI DEDICADA PARA PC / ESCRITORIO (>= 900px) */
 @media (min-width: 900px) {
   header { padding: 14px 28px; }
   
@@ -574,7 +566,6 @@ button:active {
   .lyricCard:hover { border-color: var(--border-btn); }
 }
 
-/* Animaciones de Modales */
 @keyframes modalBackdropFade {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -702,7 +693,6 @@ button:active {
   animation: slideUpFade 0.2s ease-out;
 }
 
-/* Switches con animación fluida */
 .switch {
   position: relative;
   display: inline-block;
@@ -737,7 +727,6 @@ button:active {
 input:checked + .slider { background-color: var(--accent-btn); border-color: var(--accent-btn); }
 input:checked + .slider:before { transform: translateX(18px); background-color: #ffffff; }
 
-/* Toast Notifications */
 .toast {
   position: fixed;
   bottom: 20px;
@@ -762,7 +751,6 @@ input:checked + .slider:before { transform: translateX(18px); background-color: 
   opacity: 1;
 }
 
-/* Onboarding / Dots */
 .btn-skip-tutorial {
   background: transparent;
   color: var(--text-main);
@@ -1081,7 +1069,6 @@ const tutorialSteps = [
 ];
 
 window.addEventListener("DOMContentLoaded", () => {
-  // Registro del Service Worker para soporte PWA
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
       .then(() => console.log('Service Worker registrado con éxito'))
@@ -1093,7 +1080,6 @@ window.addEventListener("DOMContentLoaded", () => {
   setupDragAndDrop();
 });
 
-// Lógica del Selector Personalizado No Nativo
 function getDelta() {
   return currentDeltaValue;
 }
@@ -1177,7 +1163,7 @@ function loadStateFromLocalStorage() {
   if (savedStickyHeader !== null) {
     document.getElementById("stickyHeaderToggle").checked = (savedStickyHeader === "true");
   } else {
-    document.getElementById("stickyHeaderToggle").checked = true; // Activo por defecto en móvil
+    document.getElementById("stickyHeaderToggle").checked = true;
   }
   if (savedAutoScroll !== null) document.getElementById("autoScrollToggle").checked = (savedAutoScroll === "true");
   if (savedApplyOffset !== null) document.getElementById("applyOffsetToggle").checked = (savedApplyOffset === "true");
@@ -1379,7 +1365,30 @@ function updateSettingsFromSwitches(shouldSave = true) {
   }
 }
 
-function processAudioFile(file) {
+// Extrae la letra en texto plano o con formato LRC desde los metadatos ID3 del MP3
+function extractLyricsFromTags(tags) {
+  if (!tags) return null;
+
+  if (tags.USLT) {
+    if (typeof tags.USLT === 'string') return tags.USLT;
+    if (tags.USLT.data) {
+      if (typeof tags.USLT.data === 'string') return tags.USLT.data;
+      if (tags.USLT.data.lyrics) return tags.USLT.data.lyrics;
+    }
+    if (tags.USLT.lyrics) return tags.USLT.lyrics;
+  }
+
+  if (tags.lyrics) {
+    if (typeof tags.lyrics === 'string') return tags.lyrics;
+    if (tags.lyrics.data && typeof tags.lyrics.data === 'string') return tags.lyrics.data;
+    if (tags.lyrics.data?.lyrics) return tags.lyrics.data.lyrics;
+  }
+
+  return null;
+}
+
+// Procesa el archivo MP3, lee sus etiquetas ID3 y detecta si contiene letra incrustada
+async function processAudioFile(file) {
   currentAudioFile = file;
   if (currentAudioUrl) URL.revokeObjectURL(currentAudioUrl);
   currentAudioUrl = URL.createObjectURL(file);
@@ -1387,6 +1396,39 @@ function processAudioFile(file) {
   currentAudioName = file.name.replace(/\.[^/.]+$/, "");
   document.getElementById("audioLabel").textContent = file.name;
   showToast("Audio cargado");
+
+  let tags = await readMP3Tags(file);
+  if (tags) {
+    if (tags.title && !metadata.title) metadata.title = tags.title;
+    if (tags.artist && !metadata.artist) metadata.artist = tags.artist;
+    if (tags.album && !metadata.album) metadata.album = tags.album;
+    populateMetadataInputs();
+
+    let embeddedLyrics = extractLyricsFromTags(tags);
+    if (embeddedLyrics && embeddedLyrics.trim().length > 0) {
+      let confirmLoad = await showCustomDialog({
+        title: "¡Letra detectada!",
+        message: "Este MP3 contiene letra en sus metadatos internos. ¿Deseas cargarla en el editor?",
+        isAlert: false
+      });
+
+      if (confirmLoad) {
+        if (/\[\d+:\d+\.?\d*\]/.test(embeddedLyrics)) {
+          parseLRC(embeddedLyrics);
+        } else {
+          lyrics = [];
+          selectedIndices.clear();
+          embeddedLyrics.split("\n").forEach(line => {
+            line = line.trim();
+            if (line) lyrics.push({ time: 0, text: line });
+          });
+          render();
+          saveStateToLocalStorage();
+        }
+        showToast("Letra del MP3 cargada");
+      }
+    }
+  }
 }
 
 function processLrcFile(file) {
@@ -1821,12 +1863,10 @@ async function downloadMP3WithLRC() {
   try {
     showToast("Leyendo metadatos e imagen...");
 
-    // 1. Extraer tags y carátula existentes del MP3 original
     let existingTags = await readMP3Tags(currentAudioFile);
     let arrayBuffer = await currentAudioFile.arrayBuffer();
     let writer = new ID3Writer(arrayBuffer);
 
-    // 2. Definir metadatos (prioriza los campos del formulario; si no hay, usa los originales del archivo)
     let finalTitle = metadata.title || (existingTags?.title || "");
     let finalArtist = metadata.artist || (existingTags?.artist || "");
     let finalAlbum = metadata.album || (existingTags?.album || "");
@@ -1835,7 +1875,6 @@ async function downloadMP3WithLRC() {
     if (finalArtist) writer.setFrame('TPE1', [finalArtist]);
     if (finalAlbum) writer.setFrame('TALB', finalAlbum);
 
-    // 3. Reinyectar la carátula original (APIC) si existe
     if (existingTags && existingTags.picture) {
       let pic = existingTags.picture;
       let byteArray = new Uint8Array(pic.data);
@@ -1847,7 +1886,6 @@ async function downloadMP3WithLRC() {
       });
     }
 
-    // 4. Inyectar letra sincronizada (USLT)
     writer.setFrame('USLT', {
       description: 'Lyrics',
       lyrics: lrcContent,
@@ -1856,7 +1894,6 @@ async function downloadMP3WithLRC() {
 
     writer.addTag();
 
-    // 5. Generar enlace y descargar
     let blob = writer.getBlob();
     let a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
