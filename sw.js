@@ -1,12 +1,15 @@
-const CACHE_NAME = 'editor-lrc-v5';
+const CACHE_NAME = 'editor-lrc-v6';
 
+// Listado de todos los recursos estáticos y CDNs externos necesarios para funcionar offline
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  'https://cdn.jsdelivr.net/npm/browser-id3-writer@4.4.0/dist/browser-id3-writer.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js'
 ];
 
-// Instalación e inicio de caché
+// Instalación e inicio de caché guardando las dependencias externas
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -16,7 +19,7 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Limpieza de cachés antiguas al actualizar
+// Limpieza de cachés antiguas al actualizar la versión del Service Worker
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
