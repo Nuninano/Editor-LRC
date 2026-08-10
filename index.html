@@ -6,6 +6,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Editor LRC Pro</title>
 
+<!-- Manifest y PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LRC Pro">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect x='16' y='16' width='480' height='480' rx='108' fill='%23000000' stroke='%23333333' stroke-width='16'/%3E%3Cpath d='M 176 138 H 226 V 324 H 336 V 374 H 176 Z' fill='%23FFFFFF'/%3E%3C/svg%3E">
+
 <!-- Favicon SVG (moderno) -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect x='16' y='16' width='480' height='480' rx='108' fill='%23000000' stroke='%23333333' stroke-width='16'/%3E%3Cpath d='M 176 138 H 226 V 324 H 336 V 374 H 176 Z' fill='%23FFFFFF'/%3E%3C/svg%3E" type="image/svg+xml">
 
@@ -1072,6 +1080,13 @@ const tutorialSteps = [
 ];
 
 window.addEventListener("DOMContentLoaded", () => {
+  // Registro del Service Worker para soporte PWA
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+      .then(() => console.log('Service Worker registrado con éxito'))
+      .catch((err) => console.error('Error registrando Service Worker:', err));
+  }
+
   loadStateFromLocalStorage();
   setupKeyboardShortcuts();
   setupDragAndDrop();
