@@ -1,12 +1,12 @@
 {
   "name": "Editor LRC Pro",
-  "short_name": "LRC Pro",
-  "description": "Editor y sincronizador de letras de canciones en formato LRC",
-  "start_url": "./index.html",
+  "short_name": "Editor LRC",
+  "start_url": "./",
   "display": "standalone",
   "background_color": "#0f0f0f",
-  "theme_color": "#0f0f0f",
-  "orientation": "any",
+  "theme_color": "#181818",
+  "orientation": "portrait-primary",
+  "description": "Editor y sincronizador avanzado de letras de canciones (.LRC) en tiempo real con inyección nativa ID3v2.",
   "icons": [
     {
       "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect x='16' y='16' width='480' height='480' rx='108' fill='%23000000' stroke='%23333333' stroke-width='16'/%3E%3Cpath d='M 176 138 H 226 V 324 H 336 V 374 H 176 Z' fill='%23FFFFFF'/%3E%3C/svg%3E",
@@ -16,3 +16,4 @@
     }
   ]
 }
+
